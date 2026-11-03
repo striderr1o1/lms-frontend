@@ -235,6 +235,12 @@ label {
 .rename-form,
 .lesson-editor { margin-bottom: 0.85rem; }
 
+.video-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.85rem;
+}
+
 .lesson {
   padding: 1rem 0 1.25rem;
   border-top: 1px solid #343a46;
@@ -276,11 +282,21 @@ label {
 
 .markdown a { color: #e2a54a; }
 
-mux-player {
+mux-player,
+iframe.lesson-video {
   display: block;
   width: 100%;
   margin-top: 0.85rem;
+}
+
+mux-player {
   --media-accent-color: #e2a54a;
+}
+
+iframe.lesson-video {
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border: 0;
 }
 
 @media (max-width: 720px) {
@@ -293,4 +309,5 @@ mux-player {
   .logout { margin-top: 0.75rem; }
   .main { padding: 1.25rem; }
   .counts { grid-template-columns: 1fr; }
+  .video-fields { grid-template-columns: 1fr; }
 }
