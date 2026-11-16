@@ -61,5 +61,5 @@ export function clearSession() {
 export function homePath(role) {
   if (role === 'teacher') return '/teacher';
   if (role === 'admin') return '/admin';
-  return '/student';
+  return '/courses';
 }

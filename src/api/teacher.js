@@ -8,26 +8,6 @@ export function getCourse(courseId) {
   return api(`/api/teacher/courses/${encodeURIComponent(courseId)}`);
 }
 
-export function createCourse(name) {
-  return api('/api/teacher/courses', {
-    method: 'POST',
-    body: { name },
-  });
-}
-
-export function updateCourse(courseId, body) {
-  return api(`/api/teacher/courses/${encodeURIComponent(courseId)}`, {
-    method: 'PATCH',
-    body,
-  });
-}
-
-export function deleteCourse(courseId) {
-  return api(`/api/teacher/courses/${encodeURIComponent(courseId)}`, {
-    method: 'DELETE',
-  });
-}
-
 export function createLesson(courseId, body) {
   return api(`/api/teacher/courses/${encodeURIComponent(courseId)}/lessons`, {
     method: 'POST',

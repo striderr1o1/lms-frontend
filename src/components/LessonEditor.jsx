@@ -7,8 +7,11 @@ import {
   getVideo,
   updateLesson,
 } from '../api/teacher.js';
-import YouTubePlayer from './YouTubePlayer.jsx';
+import MarkdownReader from './patterns/MarkdownReader.jsx';
+import VideoStage from './patterns/VideoStage.jsx';
 import { youtubeWatchUrl } from './youtubeVideo.js';
+import Button from './primitives/Button.jsx';
+import SegmentedControl from './primitives/SegmentedControl.jsx';
 
 function uploadErrorMessage(event) {
   const detail = event?.detail;
@@ -25,6 +28,13 @@ function savedVideoSource(lesson) {
   if (lesson?.youtube_video_id) return 'youtube';
   if (lesson?.mux_asset_id) return 'mux';
   return null;
+}
+
+function initialSourceMode(lesson) {
+  const source = savedVideoSource(lesson);
+  if (source === 'youtube') return 'youtube';
+  if (source === 'mux') return 'upload';
+  return 'none';
 }
 
 function isNewYoutube(youtubeInput, savedYoutubeId) {
@@ -65,9 +75,22 @@ function videoPayload({
   return {};
 }
 
+const VIDEO_MODES = [
+  { value: 'none', label: 'None' },
+  { value: 'youtube', label: 'YouTube URL' },
+  { value: 'upload', label: 'Upload Video' },
+];
+
+const NOTE_MODES = [
+  { value: 'write', label: 'Write' },
+  { value: 'preview', label: 'Preview' },
+];
+
 export default function LessonEditor({ courseId, lesson, onSaved, onDeleted }) {
   const [title, setTitle] = useState(lesson?.title ?? '');
   const [body, setBody] = useState(lesson?.body ?? '');
+  const [notesMode, setNotesMode] = useState('write');
+  const [sourceMode, setSourceMode] = useState(() => initialSourceMode(lesson));
   const [muxAssetId, setMuxAssetId] = useState(lesson?.mux_asset_id ?? null);
   const [savedMuxId, setSavedMuxId] = useState(lesson?.mux_asset_id ?? null);
   const [videoSource, setVideoSource] = useState(lesson?.video_source ?? null);
@@ -136,6 +159,7 @@ export default function LessonEditor({ courseId, lesson, onSaved, onDeleted }) {
     setPollError('');
     setYoutubeUrl('');
     setRemoveVideo(false);
+    setSourceMode('upload');
     setUploading(true);
     setUploadProgress(0);
 
@@ -210,6 +234,33 @@ export default function LessonEditor({ courseId, lesson, onSaved, onDeleted }) {
     if (url) setYoutubeUrl(url);
   }
 
+  function selectSource(next) {
+    if (next === sourceMode) return;
+    if (next === 'none') {
+      onRemoveVideo();
+      setSourceMode('none');
+      return;
+    }
+    if (next === 'youtube') {
+      onRemoveVideo();
+      onKeepVideo();
+      setSourceMode('youtube');
+      return;
+    }
+    setRemoveVideo(false);
+    setYoutubeUrl(youtubeWatchUrl(youtubeVideoId));
+    setSourceMode('upload');
+  }
+
+  function keepCurrentVideo() {
+    onKeepVideo();
+    setSourceMode(initialSourceMode({
+      video_source: videoSource,
+      youtube_video_id: youtubeVideoId,
+      mux_asset_id: savedMuxId,
+    }));
+  }
+
   function applySaved(saved) {
     const nextAssetId = saved?.mux_asset_id ?? null;
     const nextYoutubeId = saved?.youtube_video_id ?? null;
@@ -223,6 +274,7 @@ export default function LessonEditor({ courseId, lesson, onSaved, onDeleted }) {
     setYoutubeUrl(youtubeWatchUrl(nextYoutubeId));
     setRemoveVideo(false);
     setUploadProgress(null);
+    setSourceMode(initialSourceMode(saved));
     if (typeof saved?.title === 'string') setTitle(saved.title);
     if (typeof saved?.body === 'string') setBody(saved.body);
   }
@@ -270,7 +322,6 @@ export default function LessonEditor({ courseId, lesson, onSaved, onDeleted }) {
 
   async function onDelete() {
     if (!lesson || busyRef.current) return;
-    if (!window.confirm(`Delete "${lesson.title}"?`)) return;
     busyRef.current = true;
     setBusy(true);
     setError('');
@@ -287,16 +338,14 @@ export default function LessonEditor({ courseId, lesson, onSaved, onDeleted }) {
 
   const pendingMux = Boolean(muxAssetId) && muxAssetId !== savedMuxId;
   const replacingWithUrl = isNewYoutube(youtubeUrl, youtubeVideoId);
-  const showMuxStatus = Boolean(muxAssetId) && !removeVideo && !replacingWithUrl;
+  const showMuxStatus = sourceMode === 'upload' && Boolean(muxAssetId) && !removeVideo && !replacingWithUrl;
   const savedWatchUrl = youtubeWatchUrl(youtubeVideoId);
-  const showYoutube = Boolean(savedWatchUrl) && !removeVideo && !pendingMux;
-  const showRemove = (Boolean(muxAssetId) || Boolean(youtubeVideoId) || Boolean(youtubeUrl.trim()))
-    && (!removeVideo || replacingWithUrl);
+  const showYoutube = sourceMode === 'youtube' && Boolean(savedWatchUrl) && !removeVideo && !pendingMux;
 
   return (
-    <form className="panel stack lesson-editor" onSubmit={onSubmit}>
-      <h3>{lesson ? `Lesson ${lesson.lesson_number}` : 'New lesson'}</h3>
-      <label>
+    <form className="editor-panel stack" onSubmit={onSubmit}>
+      <h3 className="card-title">{lesson ? `Lesson ${lesson.lesson_number}` : 'New lesson'}</h3>
+      <label className="field">
         Title
         <input
           value={title}
@@ -305,20 +354,47 @@ export default function LessonEditor({ courseId, lesson, onSaved, onDeleted }) {
           required
         />
       </label>
-      <label>
-        Lesson notes
-        <textarea
-          value={body}
-          onChange={(event) => setBody(event.target.value)}
-          placeholder="Markdown"
+      <div className="field">
+        <span className="field-label-row">
+          <span className="field-label">Lesson notes</span>
+          <SegmentedControl
+            className="segmented-fit"
+            label="Notes mode"
+            value={notesMode}
+            onChange={setNotesMode}
+            options={NOTE_MODES}
+          />
+        </span>
+        {notesMode === 'preview' ? (
+          body.trim()
+            ? <MarkdownReader markdown={body} />
+            : <p className="muted">Nothing to preview.</p>
+        ) : (
+          <textarea
+            value={body}
+            onChange={(event) => setBody(event.target.value)}
+            placeholder="Markdown"
+          />
+        )}
+      </div>
+      <div className="field">
+        <span className="field-label">Video</span>
+        <SegmentedControl
+          label="Video source"
+          value={sourceMode}
+          onChange={selectSource}
+          options={VIDEO_MODES}
+          disabled={busy}
         />
-      </label>
-      <div className="video-fields">
-        <label>
-          Video
+      </div>
+      {sourceMode === 'upload' ? (
+        <label className="field">
+          Video file
           <input type="file" accept="video/*" onChange={onFile} disabled={uploading || busy} />
         </label>
-        <label>
+      ) : null}
+      {sourceMode === 'youtube' ? (
+        <label className="field">
           YouTube URL
           <input
             value={youtubeUrl}
@@ -328,40 +404,38 @@ export default function LessonEditor({ courseId, lesson, onSaved, onDeleted }) {
             disabled={uploading || busy}
           />
         </label>
-      </div>
+      ) : null}
       {uploading ? (
-        <p className="muted">Uploading {Math.round(uploadProgress ?? 0)}%</p>
+        <div className="upload-progress">
+          <progress max="100" value={Math.round(uploadProgress ?? 0)} />
+          <p className="muted">Uploading {Math.round(uploadProgress ?? 0)}%</p>
+        </div>
       ) : null}
       {showMuxStatus ? <p className="muted">Video status: {videoStatus || 'waiting'}</p> : null}
       {showYoutube ? (
         <>
           <p className="muted">{savedWatchUrl}</p>
-          <YouTubePlayer videoId={youtubeVideoId} title={title} />
+          <VideoStage lesson={{ title, youtube_video_id: youtubeVideoId }} />
         </>
       ) : null}
-      {removeVideo && !replacingWithUrl ? (
+      {sourceMode === 'none' && removeVideo ? (
         <p className="muted">Video will be removed when you save.</p>
       ) : null}
-      {showRemove ? (
-        <button type="button" className="secondary" onClick={onRemoveVideo} disabled={busy}>
-          Remove video
-        </button>
-      ) : null}
-      {removeVideo && !replacingWithUrl ? (
-        <button type="button" className="secondary" onClick={onKeepVideo} disabled={busy}>
+      {sourceMode === 'none' && removeVideo ? (
+        <Button variant="secondary" onClick={keepCurrentVideo} disabled={busy}>
           Keep video
-        </button>
+        </Button>
       ) : null}
       {uploadError ? <p className="form-error" role="alert">{uploadError}</p> : null}
       {pollError ? <p className="form-error" role="alert">{pollError}</p> : null}
       <div className="card-actions">
-        <button type="submit" disabled={busy || uploading}>
+        <Button type="submit" disabled={busy || uploading}>
           {busy ? 'Saving…' : 'Save lesson'}
-        </button>
+        </Button>
         {lesson ? (
-          <button type="button" className="danger" onClick={onDelete} disabled={busy || uploading}>
+          <Button variant="danger" confirm disabled={busy || uploading} onConfirm={onDelete}>
             Delete
-          </button>
+          </Button>
         ) : null}
       </div>
       {error ? <p className="form-error" role="alert">{error}</p> : null}
