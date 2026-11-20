@@ -35,4 +35,6 @@ Shared controls are in `src/components/primitives` (button, input, password inpu
 
 Unknown paths show a 404 with the compass mark.
 
-Students only see courses an admin assigned. Teachers edit lessons on assigned courses and do not create courses. Admins create and manage courses, including an optional cover sent as a `cover` object on `POST` and `PATCH /api/admin/courses`. Unsplash search uses `GET /api/images/unsplash/search`. The access key stays on the server.
+Students only see courses an admin assigned. Teachers edit lessons on assigned courses and do not create courses. A lesson is an ordered stack of text and video blocks. The teacher adds, reorders, and removes those blocks. The student course page renders them in that order, after Previous and Next.
+
+Admins create and manage courses, including an optional cover sent as a `cover` object on `POST` and `PATCH /api/admin/courses`. Unsplash search uses `GET /api/images/unsplash/search`. The access key stays on the server.
