@@ -26,6 +26,18 @@ function isTypingTarget(target) {
   return Boolean(target.isContentEditable);
 }
 
+function orderedBlocks(lesson) {
+  const blocks = Array.isArray(lesson?.blocks) ? lesson.blocks : [];
+  return blocks
+    .map((block, index) => ({ block, index }))
+    .sort((left, right) => {
+      const lp = Number(left.block?.position);
+      const rp = Number(right.block?.position);
+      if (Number.isFinite(lp) && Number.isFinite(rp) && lp !== rp) return lp - rp;
+      return left.index - right.index;
+    });
+}
+
 export default function StudentCoursePage() {
   const { id } = useParams();
   const [course, setCourse] = useState(null);
@@ -128,21 +140,41 @@ export default function StudentCoursePage() {
     />
   );
   if (selected) {
-    const hasNotes = Boolean(selected.body && selected.body.trim());
-    const hasVideo = Boolean(selected.playback_id || selected.youtube_video_id);
+    const rendered = [];
+    for (const { block, index } of orderedBlocks(selected)) {
+      if (!block || typeof block !== 'object') continue;
+      const key = block.id ?? `${block.kind ?? 'block'}-${index}`;
+      if (block.kind === 'text') {
+        if (typeof block.body === 'string' && block.body.trim()) {
+          rendered.push(<MarkdownReader key={key} markdown={block.body} />);
+        }
+        continue;
+      }
+      if (block.kind === 'video' && (block.playback_id || block.youtube_video_id)) {
+        rendered.push(
+          <VideoStage
+            key={key}
+            lesson={{
+              title: selected.title,
+              playback_id: block.playback_id,
+              youtube_video_id: block.youtube_video_id,
+            }}
+          />,
+        );
+      }
+    }
     workspace = (
       <>
         <h2 className="lesson-title">
           <span className="lesson-kicker tabular">{String(selected.lesson_number).padStart(2, '0')}</span>
           {selected.title}
         </h2>
-        <VideoStage lesson={selected} />
         <div className="lesson-nav">
           <Button variant="secondary" disabled={selectedIndex <= 0} onClick={() => selectOffset(-1)}>Previous</Button>
           <Button variant="secondary" disabled={selectedIndex >= lessons.length - 1} onClick={() => selectOffset(1)}>Next</Button>
         </div>
-        {hasNotes ? <MarkdownReader markdown={selected.body} /> : null}
-        {!hasNotes && !hasVideo ? <p className="muted">This lesson has no notes yet.</p> : null}
+        {rendered.length ? <div className="lesson-blocks">{rendered}</div> : null}
+        {rendered.length === 0 ? <p className="muted">This lesson has no notes yet.</p> : null}
       </>
     );
   }

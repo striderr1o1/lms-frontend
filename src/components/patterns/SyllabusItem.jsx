@@ -1,5 +1,8 @@
 function hasVideo(lesson) {
-  return Boolean(lesson?.playback_id || lesson?.youtube_video_id);
+  const blocks = Array.isArray(lesson?.blocks) ? lesson.blocks : [];
+  return blocks.some((block) => (
+    block?.kind === 'video' && Boolean(block.playback_id || block.youtube_video_id)
+  ));
 }
 
 function MediaIcon({ video }) {

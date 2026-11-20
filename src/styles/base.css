@@ -603,9 +603,15 @@ input:hover, textarea:hover, select:hover { border-color: var(--border-hover); }
 .course-card-body {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
-  padding: 0.95rem 1rem 1rem;
+  gap: 8px;
+  padding: 16px;
   flex: 1;
+}
+
+.course-card-body > .card-teacher,
+.course-card-body > .card-meta,
+.course-card-body > .card-status {
+  margin: 0;
 }
 
 .card-meta { margin: 0.25rem 0 0; color: var(--text-secondary); font-size: 0.92rem; }
@@ -669,14 +675,14 @@ input:hover, textarea:hover, select:hover { border-color: var(--border-hover); }
   position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 10px;
-  align-items: center;
+  gap: 12px;
+  align-items: start;
   width: 100%;
   text-align: left;
   border: 0;
   background: transparent;
   border-radius: var(--radius-md);
-  padding: 0.65rem 0.7rem 0.65rem 0.9rem;
+  padding: 0.75rem 1rem 0.75rem 1.05rem;
   color: var(--text-primary);
 }
 
@@ -684,9 +690,11 @@ input:hover, textarea:hover, select:hover { border-color: var(--border-hover); }
 
 .syllabus-index {
   width: 1.7rem;
+  margin-top: 0.2rem;
   color: var(--text-muted);
   font-size: 0.82rem;
   font-weight: 700;
+  line-height: 1.45;
 }
 
 .syllabus-item.is-active .syllabus-index,
@@ -697,16 +705,21 @@ input:hover, textarea:hover, select:hover { border-color: var(--border-hover); }
 .syllabus-title {
   display: block;
   font-weight: 650;
-  line-height: 1.35;
+  line-height: 1.45;
 }
 
 .syllabus-kind {
   display: block;
+  margin-top: 0.28rem;
   color: var(--text-muted);
   font-size: 0.78rem;
+  line-height: 1.35;
 }
 
-.syllabus-icon { color: var(--text-muted); }
+.syllabus-icon {
+  margin-top: 0.22rem;
+  color: var(--text-muted);
+}
 
 .syllabus-workspace { flex: 1; min-width: 0; }
 
@@ -717,6 +730,46 @@ input:hover, textarea:hover, select:hover { border-color: var(--border-hover); }
 }
 
 .workspace-enter { animation: workspaceEnter 180ms var(--ease-out-expo); }
+
+.syllabus-workspace:has(.lesson-title) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 16px;
+  align-items: start;
+}
+
+.syllabus-workspace:has(.lesson-title) > .workspace-toolbar {
+  grid-column: 2;
+  grid-row: 1;
+  z-index: 1;
+  align-self: start;
+  margin: 0;
+}
+
+.syllabus-workspace:has(.lesson-title) > .workspace-enter {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  display: grid;
+  grid-template-columns: subgrid;
+  align-items: start;
+}
+
+.syllabus-workspace:has(.lesson-title) > .workspace-enter > .lesson-title {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+  min-width: 0;
+  min-height: 2.75rem;
+  margin: 0;
+}
+
+.syllabus-workspace:has(.lesson-title) > .workspace-enter > :not(.lesson-title) {
+  grid-column: 1 / -1;
+}
+
+.syllabus-workspace:has(.lesson-title) .video-stage { margin: 1.5rem 0 0; }
+
+.syllabus-workspace:has(.lesson-title) .markdown-reader h1 { font-size: 1.5rem; }
 
 .lesson-title {
   margin: 0 0 0.9rem;
@@ -829,6 +882,31 @@ mux-player { --media-accent-color: var(--accent-primary); }
 .upload-progress progress::-webkit-progress-value { background: var(--accent-primary); }
 
 .upload-progress progress::-moz-progress-bar { background: var(--accent-primary); }
+
+.lesson-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 0.85rem;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md);
+}
+
+.lesson-block-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lesson-block-bar .field-label { margin-right: auto; }
+
+.lesson-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
 
 .kpi-row {
   display: grid;
